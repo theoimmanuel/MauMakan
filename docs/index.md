@@ -41,10 +41,11 @@ B. Pengguna potensial dari produk dan kebutuhan para pengguna tersebut
 C. Use case diagram  
 
 <div align="center">
-  <img width="908" height="563" alt="image" src="https://github.com/user-attachments/assets/89671938-13cf-46e2-96bb-89a5ca67d804" />
+  <img width="600" alt="Use Case Diagram" src="https://github.com/user-attachments/assets/89671938-13cf-46e2-96bb-89a5ca67d804" />
 </div>
 
-### D. Functional Requirements
+D. Functional Requirements
+
 | ID | Requirement | Use Case |
 | :--- | :--- | :--- |
 | FR-01 | Pengguna dapat melakukan registrasi dan login akun | Login / Daftar |
@@ -56,25 +57,28 @@ C. Use case diagram
 | FR-07 | Sistem dapat mempelajari pola interaksi pengguna untuk personalisasi otomatis | Personalisasi Otomatis |
 
 E. Entity relationship diagram  
+
 <div align="center">
-  <img width="908" height="476" alt="image" src="https://github.com/user-attachments/assets/69001bf0-30ad-4437-81a3-db8fac5b9a6a" />
+  <img width="600" alt="Entity Relationship Diagram" src="https://github.com/user-attachments/assets/69001bf0-30ad-4437-81a3-db8fac5b9a6a" />
 </div>
 
 F. Low-fidelity Wireframe  
+
 <div align="center">
-  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/311977b1-d3c6-4158-ab39-333c34acd7c9" />
-  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/acd4c9f3-04fd-4aef-9be0-271868581dff" />
-  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/68c85819-5fa8-481a-a6f8-7345b58921a0" />
-  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/b37258b5-1b95-4443-a174-180dc93dbc0b" />
+  <img width="220" alt="Wireframe 1" src="https://github.com/user-attachments/assets/311977b1-d3c6-4158-ab39-333c34acd7c9" />
+  <img width="220" alt="Wireframe 2" src="https://github.com/user-attachments/assets/acd4c9f3-04fd-4aef-9be0-271868581dff" />
+  <img width="220" alt="Wireframe 3" src="https://github.com/user-attachments/assets/68c85819-5fa8-481a-a6f8-7345b58921a0" />
+  <img width="220" alt="Wireframe 4" src="https://github.com/user-attachments/assets/b37258b5-1b95-4443-a174-180dc93dbc0b" />
 </div>
 
-### G. Gantt-Chart Pengerjaan Proyek (1 Semester)
+G. Gantt-Chart Pengerjaan Proyek (1 Semester)
+
 | No | Kegiatan | Bulan 1 | Bulan 2 | Bulan 3 | Bulan 4 |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| 1 | Inisiasi & Perancangan SDLC | █ | | | |
-| 2 | Analisis Kebutuhan & Wireframing | █ | █ | | |
-| 3 | Setup Repositori & Project Tools | | █ | | |
-| 4 | Pengembangan Frontend & UI | | █ | █ | |
-| 5 | Pengembangan Backend & API | | | █ | █ |
-| 6 | Integrasi Google Places API | | | | █ |
-| 7 | Testing, Deployment & Evaluasi | | | | █ |
+| 1 | Inisiasi & Perancangan SDLC | v | | | |
+| 2 | Analisis Kebutuhan & Wireframing | v | v | | |
+| 3 | Setup Repositori & Project Tools | | v | | |
+| 4 | Pengembangan Frontend & UI | | v | v | |
+| 5 | Pengembangan Backend & API | | | v | v |
+| 6 | Integrasi Google Places API | | | | v |
+| 7 | Testing, Deployment & Evaluasi | | | | v |
