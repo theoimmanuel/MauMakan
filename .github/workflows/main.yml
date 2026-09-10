@@ -1,0 +1,15 @@
+name: MauMakan - GitHub Actions
+on: [push]
+
+jobs:
+  explore-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4 
+
+      - name: Job Triggered
+        run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+
+      - name: Log Server Details
+        run: echo "This job is running on a ${{ runner.os }} server!"
