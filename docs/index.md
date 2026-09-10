@@ -40,6 +40,7 @@ E. Entity relationship diagram
 <img width="607" height="340" alt="image" src="https://github.com/user-attachments/assets/8902f743-d994-4e41-9e57-0bb3e5801d44" />
 
 F. Low-fidelity Wireframe 
+
 <img width="286" height="520" alt="image" src="https://github.com/user-attachments/assets/28492d50-0bbd-43c4-af9f-a493a9d005a9" />
 <img width="290" height="521" alt="image" src="https://github.com/user-attachments/assets/437a5e9c-610a-4f2b-9872-5934b40bc361" />
 <img width="291" height="521" alt="image" src="https://github.com/user-attachments/assets/d03daf9a-bdc5-4f1c-a3d2-317f2cddf00e" />
