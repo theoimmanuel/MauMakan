@@ -41,28 +41,40 @@ B. Pengguna potensial dari produk dan kebutuhan para pengguna tersebut
 C. Use case diagram  
 
 <div align="center">
-  <img width="553" height="377" alt="Use Case Diagram" src="https://github.com/user-attachments/assets/96acc06c-d96b-40c5-ba13-eda1994154df" />
+  <img width="908" height="563" alt="image" src="https://github.com/user-attachments/assets/89671938-13cf-46e2-96bb-89a5ca67d804" />
 </div>
 
-D. Functional requirements untuk use case yang telah dirancang  
-<div align="center">
-  <img width="599" height="302" alt="Functional Requirements" src="https://github.com/user-attachments/assets/2ee3d254-1e67-4b56-8e2a-460802a27316" />
-</div>
+### D. Functional Requirements
+| ID | Requirement | Use Case |
+| :--- | :--- | :--- |
+| FR-01 | Pengguna dapat melakukan registrasi dan login akun | Login / Daftar |
+| FR-02 | Pengguna dapat memasukkan preferensi (budget, tipe makanan, mood, lokasi) | Input Preferensi |
+| FR-03 | Sistem dapat memproses pencocokan preferensi dengan data tempat makan | Lihat Rekomendasi Makanan |
+| FR-04 | Pengguna dapat melakukan aksi Swipe (Skip / Like) pada kartu rekomendasi | Swipe Kartu (Skip / Like) |
+| FR-05 | Pengguna dapat menggunakan fitur rekomendasi acak cepat | Surprise Me |
+| FR-06 | Sistem dapat mengambil data tempat makan terdekat via Google Places API | Lihat Rekomendasi Tempat |
+| FR-07 | Sistem dapat mempelajari pola interaksi pengguna untuk personalisasi otomatis | Personalisasi Otomatis |
 
 E. Entity relationship diagram  
 <div align="center">
-  <img width="607" height="340" alt="Entity Relationship Diagram" src="https://github.com/user-attachments/assets/8902f743-d994-4e41-9e57-0bb3e5801d44" />
+  <img width="908" height="476" alt="image" src="https://github.com/user-attachments/assets/69001bf0-30ad-4437-81a3-db8fac5b9a6a" />
 </div>
 
 F. Low-fidelity Wireframe  
 <div align="center">
-  <img width="220" alt="Wireframe 1" src="https://github.com/user-attachments/assets/28492d50-0bbd-43c4-af9f-a493a9d005a9" />
-  <img width="220" alt="Wireframe 2" src="https://github.com/user-attachments/assets/437a5e9c-610a-4f2b-9872-5934b40bc361" />
-  <img width="220" alt="Wireframe 3" src="https://github.com/user-attachments/assets/d03daf9a-bdc5-4f1c-a3d2-317f2cddf00e" />
-  <img width="220" alt="Wireframe 4" src="https://github.com/user-attachments/assets/0401dab0-3e25-4805-b03d-1334b8728bd1" />
+  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/311977b1-d3c6-4158-ab39-333c34acd7c9" />
+  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/acd4c9f3-04fd-4aef-9be0-271868581dff" />
+  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/68c85819-5fa8-481a-a6f8-7345b58921a0" />
+  <img width="506" height="908" alt="image" src="https://github.com/user-attachments/assets/b37258b5-1b95-4443-a174-180dc93dbc0b" />
 </div>
 
-G. Gantt-Chart pengerjaan proyek dalam kurun waktu 1 semester  
-<div align="center">
-  <img width="532" height="271" alt="Gantt Chart" src="https://github.com/user-attachments/assets/c5ed7907-3cfe-4a89-9c09-b37e46a9b5ce" />
-</div>
+### G. Gantt-Chart Pengerjaan Proyek (1 Semester)
+| No | Kegiatan | Bulan 1 | Bulan 2 | Bulan 3 | Bulan 4 |
+| :---: | :--- | :---: | :---: | :---: | :---: |
+| 1 | Inisiasi & Perancangan SDLC | █ | | | |
+| 2 | Analisis Kebutuhan & Wireframing | █ | █ | | |
+| 3 | Setup Repositori & Project Tools | | █ | | |
+| 4 | Pengembangan Frontend & UI | | █ | █ | |
+| 5 | Pengembangan Backend & API | | | █ | █ |
+| 6 | Integrasi Google Places API | | | | █ |
+| 7 | Testing, Deployment & Evaluasi | | | | █ |
