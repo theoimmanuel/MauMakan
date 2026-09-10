@@ -32,12 +32,14 @@ A. Tujuan dari produk
 Layanan yang menawarkan rekomendasi tempat makan berdasarkan preferensi pengguna, yaitu berbasis pada budget, selera, dan lokasi. Untuk memastikan bahwa rekomendasi cocok, layanan juga menyiapkan sistem feedback berdasarkan kepuasan pengguna terhadap pilihan yang ada.  
 
 B. Pengguna potensial dari produk dan kebutuhan para pengguna tersebut  
+
 1. Pelajar/mahasiswa: Rekomendasi menu cepat saji dan lokasi terdekat, serta dengan harga yang relatif rendah.  
 2. Karyawan kantoran: Rekomendasi menu dengan kandungan nutrisi yang sesuai untuk memenuhi kebutuhan harian.  
 3. Fitness enthusiast: Rekomendasi menu/diet harian dengan rincian makro dan mikronutrisi yang spesifik.  
 4. Masyarakat umum: Pilihan menu yang sesuai dengan selera dan kondisi alergen (jika ada), fleksibel sesuai keinginan.  
 
 C. Use case diagram  
+
 <div align="center">
   <img width="553" height="377" alt="Use Case Diagram" src="https://github.com/user-attachments/assets/96acc06c-d96b-40c5-ba13-eda1994154df" />
 </div>
