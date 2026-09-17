@@ -192,7 +192,6 @@ function App() {
                 </button>
               ))}
             </div>
-
             {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
             <BottomTabs active={activeTab} onChange={setActiveTab} />
           </section>
