@@ -1,0 +1,23 @@
+name: MauMakan CI/CD Pipeline
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: |
+          npm install
+          npm run build
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: maumakan-app:${{ github.sha }}
