@@ -4,9 +4,13 @@ on:
     branches: [ "**" ]
   pull_request:
     branches: [ main ]
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,6 +21,6 @@ jobs:
           npm run build
       - uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./fe
           push: false
           tags: maumakan-app:${{ github.sha }}
