@@ -5,8 +5,8 @@ import { Chip } from './components/Chip'
 import { FoodCard } from './components/FoodCard'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenTabs } from './components/ScreenTabs'
-import { foodRecommendations, preferenceOptions } from './data/mockFoods'
-import { supabase } from './lib/supabaseClient' // <--- 1. Import helper Supabase
+import { preferenceOptions } from './data/mockFoods'
+import { supabase } from './lib/supabaseClient'
 
 const initialPreferences = {
   budget: 15000,
@@ -22,26 +22,34 @@ function App() {
   const [activeTab, setActiveTab] = useState('Home')
   const [message, setMessage] = useState('')
 
-  // <--- 2. Tambahkan useEffect di sini untuk tes fetch data
+  // State untuk menyimpan daftar makanan dari Supabase & status loading/error
+  const [foods, setFoods] = useState([])
+  const [loadingFoods, setLoadingFoods] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
+
+  // Fetch data dari tabel 'food' saat aplikasi dimuat
   useEffect(() => {
-    const fetchFoodData = async () => {
-      console.log('--- MEMANGGIL SUPABASE ---')
+    const fetchFoods = async () => {
+      setLoadingFoods(true)
       const { data, error } = await supabase.from('food').select('*')
-      
+
       if (error) {
-        console.error('Error Supabase:', error.message)
+        console.error('Error fetching foods:', error.message)
+        setFetchError('Gagal mengambil data makanan.')
       } else {
-        console.log('Data Sukses dari Supabase:', data)
+        setFoods(data || [])
       }
+      setLoadingFoods(false)
     }
 
-    fetchFoodData()
+    fetchFoods()
   }, [])
 
-  const currentFood = useMemo(
-    () => foodRecommendations[currentFoodIndex % foodRecommendations.length],
-    [currentFoodIndex],
-  )
+  // Ambil makanan saat ini berdasarkan indeks dari array foods Supabase
+  const currentFood = useMemo(() => {
+    if (foods.length === 0) return null
+    return foods[currentFoodIndex % foods.length]
+  }, [foods, currentFoodIndex])
 
   function goToLoading(nextMessage = 'Mencocokkan preferensi kamu...') {
     setMessage(nextMessage)
@@ -64,7 +72,9 @@ function App() {
   }
 
   function handleNextFood(action) {
-    setMessage(`${action}: ${currentFood.name}`)
+    if (currentFood) {
+      setMessage(`${action}: ${currentFood.name}`)
+    }
     setCurrentFoodIndex((index) => index + 1)
   }
 
@@ -195,20 +205,31 @@ function App() {
               Rekomendasi Untukmu
             </h1>
 
-            <FoodCard food={currentFood} />
+            {loadingFoods ? (
+              <p className="py-10 text-center text-xs text-stone-500">Memuat data makanan...</p>
+            ) : fetchError ? (
+              <p className="py-10 text-center text-xs text-red-500">{fetchError}</p>
+            ) : currentFood ? (
+              <>
+                <FoodCard food={currentFood} />
 
-            <div className="mt-4 grid grid-cols-3 gap-5 px-6">
-              {['Skip', 'Info', 'Like'].map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  onClick={() => handleNextFood(action)}
-                  className="aspect-square rounded-full border-2 border-stone-900 text-xs font-bold transition hover:bg-stone-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
+                <div className="mt-4 grid grid-cols-3 gap-5 px-6">
+                  {['Skip', 'Info', 'Like'].map((action) => (
+                    <button
+                      key={action}
+                      type="button"
+                      onClick={() => handleNextFood(action)}
+                      className="aspect-square rounded-full border-2 border-stone-900 text-xs font-bold transition hover:bg-stone-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2"
+                    >
+                      {action}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="py-10 text-center text-xs text-stone-500">Tidak ada data makanan.</p>
+            )}
+
             {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
             <BottomTabs active={activeTab} onChange={setActiveTab} />
           </section>
