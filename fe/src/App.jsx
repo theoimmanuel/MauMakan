@@ -27,25 +27,42 @@ function App() {
   const [loadingFoods, setLoadingFoods] = useState(true)
   const [fetchError, setFetchError] = useState(null)
 
-  // Fetch data dari tabel 'food' saat aplikasi dimuat
+  // Fetch data dari tabel 'food' dengan FILTER Supabase berdasarkan preferensi user
   useEffect(() => {
     const fetchFoods = async () => {
       setLoadingFoods(true)
-      const { data, error } = await supabase.from('food').select('*')
+      setFetchError(null)
+
+      // 1. Inisialisasi kueri awal ke tabel 'food'
+      let query = supabase.from('food').select('*')
+
+      // 2. Filter berdasarkan budget (harga <= budget user)
+      if (preferences.budget) {
+        query = query.lte('price', preferences.budget)
+      }
+
+      // 3. Filter berdasarkan tipe/kategori makanan (jika ada yang dipilih)
+      if (preferences.foodTypes && preferences.foodTypes.length > 0) {
+        query = query.in('category', preferences.foodTypes)
+      }
+
+      // Eksekusi kueri ke Supabase
+      const { data, error } = await query
 
       if (error) {
         console.error('Error fetching foods:', error.message)
         setFetchError('Gagal mengambil data makanan.')
       } else {
         setFoods(data || [])
+        setCurrentFoodIndex(0) // Reset ke makanan pertama hasil filter
       }
       setLoadingFoods(false)
     }
 
     fetchFoods()
-  }, [])
+  }, [preferences.budget, preferences.foodTypes]) // Otomatis fetch ulang saat budget / foodTypes berubah
 
-  // Ambil makanan saat ini berdasarkan indeks dari array foods Supabase
+  // Ambil makanan saat ini berdasarkan indeks dari array foods hasil filter
   const currentFood = useMemo(() => {
     if (foods.length === 0) return null
     return foods[currentFoodIndex % foods.length]
@@ -227,7 +244,9 @@ function App() {
                 </div>
               </>
             ) : (
-              <p className="py-10 text-center text-xs text-stone-500">Tidak ada data makanan.</p>
+              <p className="py-10 text-center text-xs text-stone-500">
+                Tidak ada makanan yang sesuai dengan budget/tipe pilihanmu.
+              </p>
             )}
 
             {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
