@@ -22,31 +22,26 @@ function App() {
   const [activeTab, setActiveTab] = useState('Home')
   const [message, setMessage] = useState('')
 
+  // State Riwayat Makanan (Menyimpan item + aksi: Like/Skip)
+  const [history, setHistory] = useState([])
+
   // State untuk menyimpan daftar makanan dari Supabase & status loading/error
   const [foods, setFoods] = useState([])
   const [loadingFoods, setLoadingFoods] = useState(true)
   const [fetchError, setFetchError] = useState(null)
 
-  // Fetch data dari tabel 'food' dengan FILTER Supabase berdasarkan preferensi user
+  // Fetch & filter data dari tabel 'food' berdasarkan budget
   useEffect(() => {
     const fetchFoods = async () => {
       setLoadingFoods(true)
       setFetchError(null)
 
-      // 1. Inisialisasi kueri awal ke tabel 'food'
       let query = supabase.from('food').select('*')
 
-      // 2. Filter berdasarkan budget (harga <= budget user)
       if (preferences.budget) {
         query = query.lte('price', preferences.budget)
       }
 
-      // 3. Filter berdasarkan tipe/kategori makanan (jika ada yang dipilih)
-      if (preferences.foodTypes && preferences.foodTypes.length > 0) {
-        query = query.in('category', preferences.foodTypes)
-      }
-
-      // Eksekusi kueri ke Supabase
       const { data, error } = await query
 
       if (error) {
@@ -54,15 +49,14 @@ function App() {
         setFetchError('Gagal mengambil data makanan.')
       } else {
         setFoods(data || [])
-        setCurrentFoodIndex(0) // Reset ke makanan pertama hasil filter
+        setCurrentFoodIndex(0)
       }
       setLoadingFoods(false)
     }
 
     fetchFoods()
-  }, [preferences.budget, preferences.foodTypes]) // Otomatis fetch ulang saat budget / foodTypes berubah
+  }, [preferences.budget])
 
-  // Ambil makanan saat ini berdasarkan indeks dari array foods hasil filter
   const currentFood = useMemo(() => {
     if (foods.length === 0) return null
     return foods[currentFoodIndex % foods.length]
@@ -88,9 +82,26 @@ function App() {
     })
   }
 
+  function handleSurpriseMe() {
+    if (foods.length > 0) {
+      const randomIndex = Math.floor(Math.random() * foods.length)
+      setCurrentFoodIndex(randomIndex)
+    }
+    goToLoading('Mencari pilihan acak...')
+  }
+
+  // Handler Action (Skip, Info, Like)
   function handleNextFood(action) {
     if (currentFood) {
       setMessage(`${action}: ${currentFood.name}`)
+
+      // Simpan ke riwayat jika aksi adalah 'Like' atau 'Skip'
+      if (action === 'Like' || action === 'Skip') {
+        setHistory((prev) => [
+          { ...currentFood, actionStatus: action, timestamp: new Date() },
+          ...prev,
+        ])
+      }
     }
     setCurrentFoodIndex((index) => index + 1)
   }
@@ -147,7 +158,7 @@ function App() {
                 <span>Rp {preferences.budget.toLocaleString('id-ID')}</span>
               </div>
               <input
-                className="w-full accent-stone-900"
+                className="w-full accent-stone-900 cursor-pointer"
                 max="50000"
                 min="5000"
                 step="5000"
@@ -201,8 +212,8 @@ function App() {
               />
             </label>
 
-            <Button onClick={() => goToLoading()}>Cari Rekomendasi</Button>
-            <Button variant="outline" onClick={() => goToLoading('Mencari pilihan acak...')}>
+            <Button onClick={() => goToLoading('Mencari makanan terbaik...')}>Cari Rekomendasi</Button>
+            <Button variant="outline" onClick={handleSurpriseMe}>
               Surprise Me
             </Button>
           </section>
@@ -217,39 +228,92 @@ function App() {
         )}
 
         {activeScreen === 'result' && (
-          <section>
-            <h1 className="mb-4 border border-dashed border-stone-300 px-4 py-3 text-center text-base font-bold">
-              Rekomendasi Untukmu
-            </h1>
+          <section className="flex flex-col justify-between min-h-[520px]">
+            {/* TAB HOME */}
+            {activeTab === 'Home' && (
+              <div>
+                <h1 className="mb-4 border border-dashed border-stone-300 px-4 py-3 text-center text-base font-bold">
+                  Rekomendasi Untukmu
+                </h1>
 
-            {loadingFoods ? (
-              <p className="py-10 text-center text-xs text-stone-500">Memuat data makanan...</p>
-            ) : fetchError ? (
-              <p className="py-10 text-center text-xs text-red-500">{fetchError}</p>
-            ) : currentFood ? (
-              <>
-                <FoodCard food={currentFood} />
+                {loadingFoods ? (
+                  <p className="py-10 text-center text-xs text-stone-500">Memuat data makanan...</p>
+                ) : fetchError ? (
+                  <p className="py-10 text-center text-xs text-red-500">{fetchError}</p>
+                ) : currentFood ? (
+                  <>
+                    <FoodCard food={currentFood} />
 
-                <div className="mt-4 grid grid-cols-3 gap-5 px-6">
-                  {['Skip', 'Info', 'Like'].map((action) => (
-                    <button
-                      key={action}
-                      type="button"
-                      onClick={() => handleNextFood(action)}
-                      className="aspect-square rounded-full border-2 border-stone-900 text-xs font-bold transition hover:bg-stone-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2"
-                    >
-                      {action}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="py-10 text-center text-xs text-stone-500">
-                Tidak ada makanan yang sesuai dengan budget/tipe pilihanmu.
-              </p>
+                    <div className="mt-4 grid grid-cols-3 gap-5 px-6">
+                      {['Skip', 'Info', 'Like'].map((action) => (
+                        <button
+                          key={action}
+                          type="button"
+                          onClick={() => handleNextFood(action)}
+                          className="aspect-square rounded-full border-2 border-stone-900 text-xs font-bold transition hover:bg-stone-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2"
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="py-10 text-center text-xs text-stone-500">
+                    Tidak ada makanan di bawah Rp {preferences.budget.toLocaleString('id-ID')}.
+                  </p>
+                )}
+
+                {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
+              </div>
             )}
 
-            {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
+            {/* TAB RIWAYAT */}
+            {activeTab === 'Riwayat' && (
+              <div>
+                <h1 className="mb-4 border border-dashed border-stone-300 px-4 py-3 text-center text-base font-bold">
+                  Riwayat Aktivitas
+                </h1>
+
+                {history.length === 0 ? (
+                  <p className="py-10 text-center text-xs text-stone-500">
+                    Belum ada riwayat aktivitas.
+                  </p>
+                ) : (
+                  <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    {history.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between border border-stone-300 p-3 rounded-lg bg-stone-50"
+                      >
+                        <div>
+                          <p className="text-sm font-bold text-stone-900">{item.name}</p>
+                          <p className="text-xs text-stone-500">
+                            Rp {Number(item.price || 0).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs px-2.5 py-1 rounded font-semibold ${
+                            item.actionStatus === 'Like'
+                              ? 'bg-emerald-800 text-white'
+                              : 'bg-stone-300 text-stone-700'
+                          }`}
+                        >
+                          {item.actionStatus === 'Like' ? 'Disukai' : 'Dilewati'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB FAVORIT / PROFIL */}
+            {(activeTab === 'Favorit' || activeTab === 'Profil') && (
+              <div className="py-20 text-center text-xs text-stone-500">
+                Halaman {activeTab} sedang dalam pengembangan.
+              </div>
+            )}
+
             <BottomTabs active={activeTab} onChange={setActiveTab} />
           </section>
         )}
