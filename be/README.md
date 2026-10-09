@@ -104,3 +104,33 @@ Rujukan implementasi: [Node.js crypto](https://nodejs.org/api/crypto.html) dan [
 - `npm run build --prefix ../fe`: lulus.
 - Browser Chrome headless melalui Playwright, viewport 390 × 844: daftar, refresh sesi, logout, password salah, login benar, guest, email duplikat, dan error jaringan lulus; tidak ada JavaScript page error. Browser menggunakan API dan PostgreSQL nyata; hanya skenario error jaringan yang sengaja memutus request.
 - Tidak ada deployment, push Git, perubahan database cloud, atau penutupan issue GitHub.
+
+## Google Places — issue #14 dan #15
+
+Backend menggunakan [Text Search (New)](https://developers.google.com/maps/documentation/places/web-service/text-search) dengan filter restoran dan lokasi manual. Request dikirim dari server dengan field mask eksplisit; API key tidak dikirim ke frontend.
+
+### Konfigurasi
+
+1. Di Google Cloud, aktifkan billing dan **Places API (New)**. Buat API key yang dibatasi ke Places API (New), serta IP server jika memakai IP keluar tetap.
+2. Tambahkan `GOOGLE_PLACES_API_KEY=...` di `be/.env` (lihat `.env.example`). Jangan menggunakan prefiks `VITE_` untuk key ini. Field rating dan kategori harga termasuk field berbayar; atur kuota di project Google Cloud.
+3. Database baru: jalankan skema lengkap seperti panduan sebelumnya. Database yang sudah ada: jalankan `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_google_places.sql` dari folder `be`. Migrasi menambahkan keunikan `google_place_id` dan mengizinkan nama kosong untuk record referensi Google. Jika data lama memiliki ID Google duplikat, migrasi berhenti; selesaikan duplikasi dan relasi secara manual sebelum mengulang.
+4. Jalankan backend dan frontend seperti biasa. `VITE_API_BASE_URL` harus menunjuk backend. Supabase tidak diperlukan untuk halaman hasil tempat makan.
+5. Login atau masuk sebagai guest, isi lokasi (contoh `Sleman, Yogyakarta`), lalu pilih **Cari Rekomendasi**. **Surprise Me** memilih posisi awal secara acak dari hasil pencarian lokasi yang sama.
+
+### Kontrak API dan penyimpanan
+
+`POST /recommendations` membutuhkan `Authorization: Bearer <token>` dan JSON `{ "location": "Sleman, Yogyakarta" }`. Lokasi wajib 1–200 karakter. Respons `{ "places": [...] }` berisi maksimal 20 hasil: `id` (Google Place ID), `placeId` (UUID lokal), `name`, `address`, `category`, `rating`, `userRatingCount`, `priceLevel`, `googleMapsUri`, `attributions`, dan `foods`.
+
+Google Place ID di-upsert secara transaksional ke tabel `places`; ID lokal tetap sama pada pencarian berulang. Sesuai [kebijakan Places API](https://developers.google.com/maps/documentation/places/web-service/policies), konten tampilan Google diambil baru dan tidak disalin permanen ke database. Data tempat yang sebelumnya diisi secara independen tetap dipertahankan. UI menampilkan atribusi Google Maps dan atribusi penyedia jika tersedia.
+
+`PlaceFood` pada issue direpresentasikan oleh `food_places` pada skema proyek. Relasi menu yang sudah diisi dalam `foods` dan `food_places` ikut dibaca dan ditampilkan sebagai katalog MauMakan. Google Places tidak menyediakan daftar menu beserta harga per item sehingga pencarian tidak membuat relasi menu otomatis. `priceLevel` adalah kategori harga tempat, bukan estimasi harga rupiah. Budget, tipe makanan, dan mood belum digunakan untuk penyaringan; UI menjelaskan batasan ini.
+
+Error: 400 lokasi tidak valid, 401 sesi tidak valid, 429 batas request lokal, 503 key belum dikonfigurasi/kuota Google, 502 kegagalan provider, 504 timeout Google (10 detik). Respons error tidak membocorkan key atau payload error Google. UI menyediakan status proses, hasil kosong, ubah lokasi, dan coba lagi.
+
+### Verifikasi — 2 Oktober 2026
+
+- `node --test test/places.test.js`: tes kontrak Google dengan respons simulasi; tidak memerlukan key/database.
+- `TEST_DATABASE_URL=... npm test`: **23/23 lulus**, termasuk regresi auth, HTTP/PostgreSQL nyata, ID tempat stabil, serta relasi menu.
+- Lint dan build frontend lulus.
+- Chrome headless 390 × 844: guest, validasi lokasi, hasil API, tautan Maps, hasil kosong, error jaringan dan retry lulus tanpa JavaScript page error. Google disimulasikan; backend dan PostgreSQL berjalan nyata.
+- Request ke Google secara langsung belum diverifikasi karena belum tersedia API key aktif. Setelah konfigurasi, ulangi pencarian dari UI untuk memverifikasi key, billing, dan kuota project.
