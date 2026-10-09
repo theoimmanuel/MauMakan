@@ -1,17 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 export async function getRecommendations(preferences) {
-  const response = await fetch(`${API_BASE_URL}/recommendations`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(preferences),
-  })
-
-  if (!response.ok) {
-    throw new Error('Gagal mengambil rekomendasi')
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/recommendations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionStorage.getItem('maumakan.auth.token') ?? ''}`,
+      },
+      body: JSON.stringify(preferences),
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch {
+    throw new Error('Tidak dapat terhubung ke server. Silakan coba lagi.')
   }
-
-  return response.json()
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || 'Gagal mengambil tempat makan.')
+  return data
 }

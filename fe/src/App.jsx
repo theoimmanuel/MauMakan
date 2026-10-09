@@ -8,7 +8,7 @@ import { FoodCard } from './components/FoodCard'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenTabs } from './components/ScreenTabs'
 import { preferenceOptions } from './data/mockFoods'
-import { supabase } from './lib/supabaseClient'
+import { getRecommendations } from './services/recommendationApi'
 
 const initialPreferences = {
   budget: 15000,
@@ -43,48 +43,34 @@ function App() {
   const [activeTab, setActiveTab] = useState('Home')
   const [message, setMessage] = useState('')
 
-  // State untuk menyimpan daftar makanan dari Supabase & status loading/error
   const [foods, setFoods] = useState([])
-  const [loadingFoods, setLoadingFoods] = useState(true)
+  const [loadingFoods, setLoadingFoods] = useState(false)
   const [fetchError, setFetchError] = useState(null)
+  const currentFood = useMemo(() => foods.length ? foods[currentFoodIndex % foods.length] : null,
+    [foods, currentFoodIndex])
 
-  // Fetch data dari tabel 'food' saat aplikasi dimuat
-  useEffect(() => {
-    const fetchFoods = async () => {
-      setLoadingFoods(true)
-      if (!supabase) {
-        setFetchError('Katalog makanan belum dikonfigurasi.')
-        setLoadingFoods(false)
-        return
-      }
-      const { data, error } = await supabase.from('food').select('*')
-
-      if (error) {
-        console.error('Error fetching foods:', error.message)
-        setFetchError('Gagal mengambil data makanan.')
-      } else {
-        setFoods(data || [])
-      }
-      setLoadingFoods(false)
+  async function goToLoading(nextMessage = 'Mencari tempat makan...', surprise = false) {
+    if (loadingFoods) return
+    if (!preferences.location.trim()) {
+      setFetchError('Isi kota, daerah, atau alamat pencarian terlebih dahulu.')
+      return
     }
-
-    fetchFoods()
-  }, [])
-
-  // Ambil makanan saat ini berdasarkan indeks dari array foods Supabase
-  const currentFood = useMemo(() => {
-    if (foods.length === 0) return null
-    return foods[currentFoodIndex % foods.length]
-  }, [foods, currentFoodIndex])
-
-  function goToLoading(nextMessage = 'Mencocokkan preferensi kamu...') {
+    setLoadingFoods(true)
+    setFetchError(null)
+    setFoods([])
     setMessage(nextMessage)
     setActiveScreen('loading')
-
-    window.setTimeout(() => {
+    try {
+      const { places } = await getRecommendations({ location: preferences.location })
+      setFoods(places)
+      setCurrentFoodIndex(surprise && places.length ? Math.floor(Math.random() * places.length) : 0)
+    } catch (error) {
+      setFetchError(error.message)
+    } finally {
+      setLoadingFoods(false)
       setActiveScreen('result')
       setMessage('')
-    }, 900)
+    }
   }
 
   function togglePreference(group, value) {
@@ -106,7 +92,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-stone-200 px-4 py-6 text-stone-900">
-      {user && <ScreenTabs activeScreen={activeScreen} onChange={setActiveScreen} />}
+      {user && !loadingFoods && <ScreenTabs activeScreen={activeScreen} onChange={setActiveScreen} />}
       <PhoneFrame>
         {activeScreen === 'login' && (
           <AuthPanel
@@ -125,6 +111,8 @@ function App() {
               setCurrentFoodIndex(0)
               setActiveTab('Home')
               setMessage('')
+              setFoods([])
+              setFetchError(null)
             }}
             onContinue={() => setActiveScreen('preferences')}
           />
@@ -188,7 +176,8 @@ function App() {
               <span className="sr-only">Lokasi</span>
               <input
                 className="w-full border border-stone-300 px-3 py-2.5 text-sm outline-none focus:border-stone-900"
-                placeholder="Lokasi otomatis / manual"
+                placeholder="Contoh: Sleman, Yogyakarta"
+                maxLength={200}
                 value={preferences.location}
                 onChange={(event) =>
                   setPreferences((prev) => ({ ...prev, location: event.target.value }))
@@ -196,8 +185,10 @@ function App() {
               />
             </label>
 
-            <Button onClick={() => goToLoading()}>Cari Rekomendasi</Button>
-            <Button variant="outline" onClick={() => goToLoading('Mencari pilihan acak...')}>
+            <p className="text-xs text-stone-500">Pencarian berdasarkan lokasi. Budget dan mood belum digunakan untuk menyaring tempat.</p>
+            {fetchError && <p role="alert" className="text-sm text-red-600">{fetchError}</p>}
+            <Button disabled={loadingFoods} onClick={() => goToLoading()}>Cari Rekomendasi</Button>
+            <Button variant="outline" onClick={() => goToLoading('Mencari pilihan acak...', true)}>
               Surprise Me
             </Button>
           </section>
@@ -218,15 +209,15 @@ function App() {
             </h1>
 
             {loadingFoods ? (
-              <p className="py-10 text-center text-xs text-stone-500">Memuat data makanan...</p>
+              <p className="py-10 text-center text-xs text-stone-500">Memuat tempat makan...</p>
             ) : fetchError ? (
-              <p className="py-10 text-center text-xs text-red-500">{fetchError}</p>
+              <p role="alert" className="py-10 text-center text-sm text-red-600">{fetchError}</p>
             ) : currentFood ? (
               <>
                 <FoodCard food={currentFood} />
 
-                <div className="mt-4 grid grid-cols-3 gap-5 px-6">
-                  {['Skip', 'Info', 'Like'].map((action) => (
+                <div className="mt-4 grid grid-cols-2 gap-5 px-6">
+                  {['Skip', 'Like'].map((action) => (
                     <button
                       key={action}
                       type="button"
@@ -239,9 +230,13 @@ function App() {
                 </div>
               </>
             ) : (
-              <p className="py-10 text-center text-xs text-stone-500">Tidak ada data makanan.</p>
+              <p className="py-10 text-center text-xs text-stone-500">Belum ada tempat makan ditemukan. Coba lokasi lain.</p>
             )}
 
+            <div className="mt-4 space-y-2">
+              {fetchError && <Button onClick={() => goToLoading()}>Coba lagi</Button>}
+              <Button variant="outline" onClick={() => { setFetchError(null); setActiveScreen('preferences') }}>Ubah lokasi</Button>
+            </div>
             {message && <p className="mt-3 text-center text-xs text-stone-500">{message}</p>}
             <BottomTabs active={activeTab} onChange={setActiveTab} />
           </section>

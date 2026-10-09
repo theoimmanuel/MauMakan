@@ -1,35 +1,43 @@
+const prices = {
+  PRICE_LEVEL_FREE: 'Gratis',
+  PRICE_LEVEL_INEXPENSIVE: 'Terjangkau',
+  PRICE_LEVEL_MODERATE: 'Menengah',
+  PRICE_LEVEL_EXPENSIVE: 'Mahal',
+  PRICE_LEVEL_VERY_EXPENSIVE: 'Sangat mahal',
+}
+
+function safeLink(value) {
+  return typeof value === 'string' && /^https:\/\//i.test(value) ? value : undefined
+}
+
 export function FoodCard({ food }) {
   return (
-    <section className="relative h-[420px]">
-      <div className="absolute left-2 top-2 h-[380px] w-full border-2 border-stone-200 bg-white" />
-      <article className="absolute left-0 top-0 h-[380px] w-full overflow-hidden border-2 border-stone-900 bg-white">
-        {/* Placeholder / Foto Makanan */}
-        <div className="flex h-[55%] items-center justify-center border-b border-stone-300 bg-[repeating-linear-gradient(135deg,#e7e5e4,#e7e5e4_7px,#fafaf9_7px,#fafaf9_14px)] text-xs font-semibold text-stone-400">
-          Foto Makanan
+    <article className="space-y-4 border-2 border-stone-900 bg-white p-5">
+      <div>
+        <p className="mb-2 text-xs font-semibold text-stone-500">TEMPAT MAKAN</p>
+        <h2 className="break-words text-xl font-bold">{food.name}</h2>
+        <p className="mt-2 text-sm text-stone-600">{food.address || 'Alamat belum tersedia'}</p>
+      </div>
+      {food.category && <p className="text-sm text-stone-600">{food.category}</p>}
+      <p className="text-sm">
+        {food.rating != null ? `★ ${food.rating} / 5 (${food.userRatingCount ?? 0} ulasan)` : 'Belum ada rating'}
+      </p>
+      <p className="text-sm">Kategori harga: {prices[food.priceLevel] || 'Belum tersedia'}</p>
+      {safeLink(food.googleMapsUri) && (
+        <a className="block text-sm font-semibold underline" href={food.googleMapsUri} target="_blank" rel="noopener noreferrer">Info & lokasi di Google Maps ↗</a>
+      )}
+      <p translate="no" className="whitespace-nowrap text-xs font-normal text-[#5e5e5e]">Google Maps</p>
+      {food.attributions?.map((attribution, index) => (
+        <a key={index} href={safeLink(attribution.providerUri)} target="_blank" rel="noopener noreferrer" className="block text-xs underline">{attribution.provider}</a>
+      ))}
+      {food.foods?.length > 0 && (
+        <div className="border-t border-stone-200 pt-3">
+          <p className="text-sm font-semibold">Menu dari katalog MauMakan</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {food.foods.map((item) => <li key={item.id}>{item.name} · {item.price == null ? 'Harga belum tersedia' : `Rp ${Number(item.price).toLocaleString('id-ID')}`}</li>)}
+          </ul>
         </div>
-
-        <div className="space-y-3 p-4">
-          <div>
-            <h2 className="text-base font-bold text-stone-950">{food?.name || 'Nama Makanan'}</h2>
-            <p className="mt-1 text-sm leading-5 text-stone-600">{food?.description || '-'}</p>
-          </div>
-
-          {/* Menampilkan Kategori sebagai Tag */}
-          {food?.category && (
-            <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-700">
-                {food.category}
-              </span>
-            </div>
-          )}
-
-          {/* Menampilkan Harga & Nama Tempat */}
-          <p className="text-center text-xs text-stone-500">
-            Est. Rp {food?.price ? Number(food.price).toLocaleString('id-ID') : 0}
-            {food?.place_name ? ` · ${food.place_name}` : ''}
-          </p>
-        </div>
-      </article>
-    </section>
+      )}
+    </article>
   )
 }
