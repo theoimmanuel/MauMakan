@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { createPlacesClient } from './places.js'
 import {
   HttpError, validateCredentials, hashPassword, verifyPassword,
   createSession, readToken, findSession, tokenHash,
@@ -43,7 +44,7 @@ async function transaction(pool, action) {
   }
 }
 
-export function createApp(pool, { frontendOrigin = 'http://localhost:5173', rateLimit = 30 } = {}) {
+export function createApp(pool, { frontendOrigin = 'http://localhost:5173', rateLimit = 30, searchPlaces = createPlacesClient() } = {}) {
   const attempts = new Map()
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -66,12 +67,12 @@ export function createApp(pool, { frontendOrigin = 'http://localhost:5173', rate
         return
       }
       const path = new URL(request.url, 'http://localhost').pathname
-      if (request.method === 'POST' && ['/auth/register', '/auth/login', '/auth/guest'].includes(path)) {
+      if (request.method === 'POST' && ['/auth/register', '/auth/login', '/auth/guest', '/recommendations'].includes(path)) {
         const now = Date.now()
         for (const [key, value] of attempts) {
           if (value.until <= now) attempts.delete(key)
         }
-        const ip = request.socket.remoteAddress
+        const ip = `${request.socket.remoteAddress}:${path === '/recommendations' ? 'places' : 'auth'}`
         const attempt = attempts.get(ip) ?? { count: 0, until: now + 60_000 }
         attempts.set(ip, attempt)
         if (++attempt.count > rateLimit) {
@@ -79,6 +80,27 @@ export function createApp(pool, { frontendOrigin = 'http://localhost:5173', rate
           throw new HttpError(429, 'Terlalu banyak percobaan. Coba lagi sebentar.')
         }
         const body = await readJson(request)
+        if (path === '/recommendations') {
+          await findSession(pool, readToken(request))
+          const { places } = await searchPlaces(body)
+          const savedPlaces = await transaction(pool, async (db) => {
+            const result = []
+            for (const place of places) {
+              const { rows: [saved] } = await db.query(
+                `INSERT INTO places (google_place_id) VALUES ($1)
+                 ON CONFLICT (google_place_id) DO UPDATE SET google_place_id = EXCLUDED.google_place_id
+                 RETURNING id`, [place.id],
+              )
+              const { rows: foods } = await db.query(
+                `SELECT f.id, f.name, fp.price FROM food_places fp
+                 JOIN foods f ON f.id = fp.food_id WHERE fp.place_id = $1 ORDER BY f.name`, [saved.id],
+              )
+              result.push({ ...place, placeId: saved.id, foods })
+            }
+            return result
+          })
+          return send(200, { places: savedPlaces })
+        }
         if (path === '/auth/register') {
           const { email, password, name } = validateCredentials(body, true)
           const passwordHash = await hashPassword(password)

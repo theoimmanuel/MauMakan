@@ -19,7 +19,10 @@ let baseUrl
 before(async () => {
   await admin.query(`CREATE SCHEMA ${schema}`)
   await pool.query(await readFile(new URL('../erd/mau_makan_apa_schema.sql', import.meta.url), 'utf8'))
-  server = createApp(pool, { rateLimit: 100 })
+  server = createApp(pool, { rateLimit: 100, searchPlaces: async ({ location }) => {
+    if (location === 'kosong') return { places: [] }
+    return { places: [{ id: 'test-google-id', name: 'Warung Uji', address: 'Sleman' }] }
+  } })
   server.listen(0, '127.0.0.1')
   await once(server, 'listening')
   baseUrl = `http://127.0.0.1:${server.address().port}`
@@ -210,4 +213,29 @@ test('migration upgrades legacy users without dropping existing data', async () 
     await db.query(`SET search_path TO public; DROP SCHEMA IF EXISTS ${legacy} CASCADE`)
     db.release()
   }
+})
+
+
+test('places requires a session, persists stable IDs and returns existing food relations', async () => {
+  const search = (token, location = 'Sleman') => fetch(`${baseUrl}/recommendations`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ location }),
+  })
+  assert.equal((await search()).status, 401)
+  const guest = await fetch(`${baseUrl}/auth/guest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then((r) => r.json())
+  const response = await search(guest.token)
+  assert.equal(response.status, 200)
+  const { places: [place] } = await response.json()
+  assert.equal(place.name, 'Warung Uji')
+  assert.deepEqual(place.foods, [])
+  const { rows: [saved] } = await pool.query('SELECT * FROM places WHERE id = $1', [place.placeId])
+  assert.equal(saved.google_place_id, 'test-google-id')
+  assert.equal(saved.name, null)
+  const { rows: [food] } = await pool.query("INSERT INTO foods (name) VALUES ('Nasi Uji') RETURNING id")
+  await pool.query('INSERT INTO food_places (food_id, place_id, price) VALUES ($1, $2, $3)', [food.id, place.placeId, 15000])
+  const { places: [again] } = await (await search(guest.token)).json()
+  assert.equal(again.placeId, place.placeId)
+  assert.deepEqual(again.foods, [{ id: food.id, name: 'Nasi Uji', price: 15000 }])
+  assert.equal((await pool.query("SELECT count(*) FROM places WHERE google_place_id = 'test-google-id'")).rows[0].count, '1')
+  assert.deepEqual(await (await search(guest.token, 'kosong')).json(), { places: [] })
 })

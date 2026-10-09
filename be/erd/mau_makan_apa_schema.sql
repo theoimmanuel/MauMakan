@@ -55,7 +55,7 @@ CREATE TABLE foods (
 -- ---------------------------------------------------------
 CREATE TABLE places (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name             VARCHAR(150) NOT NULL,
+    name             VARCHAR(150), -- nullable for Google ID-only records
     address          TEXT,
     latitude         DOUBLE PRECISION,
     longitude        DOUBLE PRECISION,
@@ -64,6 +64,8 @@ CREATE TABLE places (
 );
 
 -- ---------------------------------------------------------
+CREATE UNIQUE INDEX places_google_place_id_unique ON places (google_place_id);
+
 -- FOOD_PLACES (junction: makanan tersedia di tempat mana, harga berapa)
 -- ---------------------------------------------------------
 CREATE TABLE food_places (
