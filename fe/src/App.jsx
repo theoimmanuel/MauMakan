@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AuthPanel } from './components/AuthPanel'
+import { getCurrentUser } from './services/authApi'
 import { BottomTabs } from './components/BottomTabs'
 import { Button } from './components/Button'
 import { Chip } from './components/Chip'
@@ -16,7 +18,26 @@ const initialPreferences = {
 }
 
 function App() {
-  const [activeScreen, setActiveScreen] = useState('login')
+  const [selectedScreen, setActiveScreen] = useState('login')
+  const [user, setUser] = useState(null)
+  const [restoring, setRestoring] = useState(true)
+  const [authError, setAuthError] = useState('')
+  const activeScreen = user ? selectedScreen : 'login'
+
+  useEffect(() => {
+    let cancelled = false
+    getCurrentUser().then((currentUser) => {
+      if (!cancelled && currentUser) {
+        setUser(currentUser)
+        setActiveScreen('preferences')
+      }
+    }).catch((error) => {
+      if (!cancelled) setAuthError(error.message)
+    }).finally(() => {
+      if (!cancelled) setRestoring(false)
+    })
+    return () => { cancelled = true }
+  }, [])
   const [preferences, setPreferences] = useState(initialPreferences)
   const [currentFoodIndex, setCurrentFoodIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('Home')
@@ -31,6 +52,11 @@ function App() {
   useEffect(() => {
     const fetchFoods = async () => {
       setLoadingFoods(true)
+      if (!supabase) {
+        setFetchError('Katalog makanan belum dikonfigurasi.')
+        setLoadingFoods(false)
+        return
+      }
       const { data, error } = await supabase.from('food').select('*')
 
       if (error) {
@@ -80,42 +106,28 @@ function App() {
 
   return (
     <div className="min-h-screen bg-stone-200 px-4 py-6 text-stone-900">
-      <ScreenTabs activeScreen={activeScreen} onChange={setActiveScreen} />
+      {user && <ScreenTabs activeScreen={activeScreen} onChange={setActiveScreen} />}
       <PhoneFrame>
         {activeScreen === 'login' && (
-          <section className="space-y-4">
-            <h1 className="border border-dashed border-stone-300 px-4 py-3 text-center text-base font-bold">
-              Mau Makan Apa?
-            </h1>
-
-            <label className="block">
-              <span className="sr-only">Email</span>
-              <input
-                className="w-full border border-stone-300 px-3 py-2.5 text-sm outline-none focus:border-stone-900"
-                placeholder="Email"
-                type="email"
-              />
-            </label>
-            <label className="block">
-              <span className="sr-only">Password</span>
-              <input
-                className="w-full border border-stone-300 px-3 py-2.5 text-sm outline-none focus:border-stone-900"
-                placeholder="Password"
-                type="password"
-              />
-            </label>
-
-            <Button onClick={() => setActiveScreen('preferences')}>Login</Button>
-            <Button variant="outline" onClick={() => setActiveScreen('preferences')}>
-              Daftar Akun Baru
-            </Button>
-
-            <p className="text-center text-xs text-stone-400">atau</p>
-
-            <Button variant="outline" onClick={() => setActiveScreen('preferences')}>
-              Lanjut sebagai Guest
-            </Button>
-          </section>
+          <AuthPanel
+            user={user}
+            restoring={restoring}
+            initialError={authError}
+            onAuthenticated={(authenticatedUser) => {
+              setUser(authenticatedUser)
+              setAuthError('')
+              setActiveScreen('preferences')
+            }}
+            onLogout={() => {
+              setUser(null)
+              setActiveScreen('login')
+              setPreferences(initialPreferences)
+              setCurrentFoodIndex(0)
+              setActiveTab('Home')
+              setMessage('')
+            }}
+            onContinue={() => setActiveScreen('preferences')}
+          />
         )}
 
         {activeScreen === 'preferences' && (
