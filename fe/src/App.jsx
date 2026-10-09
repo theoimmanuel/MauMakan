@@ -9,7 +9,7 @@ import { preferenceOptions } from './data/mockFoods'
 import { supabase } from './lib/supabaseClient'
 
 const initialPreferences = {
-  budget: 15000,
+  budget: 25000,
   foodTypes: ['Pedas'],
   moods: ['Pengen Unik'],
   location: '',
@@ -30,16 +30,18 @@ function App() {
   const [loadingFoods, setLoadingFoods] = useState(true)
   const [fetchError, setFetchError] = useState(null)
 
-  // Fetch & filter data dari tabel 'food' berdasarkan budget
+  // Fetch & filter data dari tabel 'foods' berdasarkan budget
   useEffect(() => {
     const fetchFoods = async () => {
       setLoadingFoods(true)
       setFetchError(null)
 
-      let query = supabase.from('food').select('*')
+      // 1. Sesuaikan nama tabel ke 'foods'
+      let query = supabase.from('foods').select('*')
 
+      // 2. Filter berdasarkan kolom 'price_min'
       if (preferences.budget) {
-        query = query.lte('price', preferences.budget)
+        query = query.lte('price_min', preferences.budget)
       }
 
       const { data, error } = await query
@@ -288,7 +290,7 @@ function App() {
                         <div>
                           <p className="text-sm font-bold text-stone-900">{item.name}</p>
                           <p className="text-xs text-stone-500">
-                            Rp {Number(item.price || 0).toLocaleString('id-ID')}
+                            Rp {Number(item.price_min || item.price || 0).toLocaleString('id-ID')}
                           </p>
                         </div>
                         <span
